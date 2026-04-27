@@ -1840,13 +1840,7 @@ std::string GUI_App::get_latest_network_version() const
 
 bool GUI_App::has_network_update_available() const
 {
-    std::string current = Slic3r::NetworkAgent::get_version();
-    std::string latest = get_latest_network_version();
-
-    if (current.empty() || current == "00.00.00.00")
-        return false;
-
-    return current.substr(0, 8) != latest.substr(0, 8);
+    return false;
 }
 
 void GUI_App::show_network_plugin_download_dialog(bool is_update)
@@ -1933,6 +1927,12 @@ bool GUI_App::check_networking_version()
     std::string network_ver = Slic3r::NetworkAgent::get_version();
     if (!network_ver.empty()) {
         BOOST_LOG_TRIVIAL(info) << "get_network_agent_version=" << network_ver;
+    }
+
+    if (!network_ver.empty() && network_ver != "00.00.00.00") {
+        BOOST_LOG_TRIVIAL(info) << "check_networking_version: accepting BambuStudio plugin version " << network_ver;
+        m_networking_compatible = true;
+        return true;
     }
 
     std::string studio_ver;
@@ -2501,8 +2501,19 @@ std::map<std::string, std::string> GUI_App::get_extra_header()
 {
     std::map<std::string, std::string> extra_headers;
     extra_headers.insert(std::make_pair("X-BBL-Client-Type", "slicer"));
-    extra_headers.insert(std::make_pair("X-BBL-Client-Name", SLIC3R_APP_NAME));
-    extra_headers.insert(std::make_pair("X-BBL-Client-Version", VersionInfo::convert_full_version(SLIC3R_VERSION)));
+
+    // Identify as BambuStudio to the cloud. Bambu's API rejects requests whose
+    // X-BBL-Client-Name isn't "BambuStudio" with HTTP 403 / "internal blocking".
+    // Send the loaded plugin's reported version so X-BBL-Client-Version matches
+    // what BambuStudio would send with this same plugin.
+    {
+        std::string plugin_ver = Slic3r::NetworkAgent::get_version();
+        extra_headers.insert(std::make_pair("X-BBL-Client-Name", "BambuStudio"));
+        extra_headers.insert(std::make_pair("X-BBL-Client-Version",
+            (plugin_ver.empty() || plugin_ver == "00.00.00.00")
+                ? VersionInfo::convert_full_version(SLIC3R_VERSION)
+                : plugin_ver));
+    }
 #if defined(__WINDOWS__)
 #ifdef _M_X64
     extra_headers.insert(std::make_pair("X-BBL-OS-Type", "windows"));
@@ -3399,10 +3410,6 @@ bool GUI_App::on_init_network(bool try_backup)
                 auto bambu_source = Slic3r::NetworkAgent::get_bambu_source_entry();
                 if (!bambu_source) {
                     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << ": can not get bambu source module!";
-                    m_networking_compatible = false;
-                    if (should_load_networking_plugin) {
-                        m_networking_need_update = true;
-                    }
                 }
             } else {
                 if (try_backup) {

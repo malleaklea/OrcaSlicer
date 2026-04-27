@@ -189,7 +189,8 @@ Http::priv::priv(const std::string &url)
     set_timeout_max(DEFAULT_TIMEOUT_MAX);
 	::curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, log_trace);
 	::curl_easy_setopt(curl, CURLOPT_URL, url.c_str());   // curl makes a copy internally
-	::curl_easy_setopt(curl, CURLOPT_USERAGENT, SLIC3R_APP_NAME "/" SoftFever_VERSION);
+	// Identify as BambuStudio so Bambu's cloud doesn't reject the request as a third-party client.
+	::curl_easy_setopt(curl, CURLOPT_USERAGENT, "BambuStudio/" SoftFever_VERSION);
 	::curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &error_buffer.front());
 #ifdef __WINDOWS__
 	::curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_MAX_TLSv1_2);
