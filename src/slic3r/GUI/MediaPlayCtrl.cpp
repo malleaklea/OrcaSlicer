@@ -1,4 +1,5 @@
 #include "MediaPlayCtrl.h"
+#include "wxMediaCtrl2.h"
 #include "Widgets/Button.hpp"
 #include "Widgets/CheckBox.hpp"
 #include "Widgets/Label.hpp"
@@ -38,7 +39,7 @@ static std::map<int, std::string> error_messages = {
 namespace Slic3r {
 namespace GUI {
 
-MediaPlayCtrl::MediaPlayCtrl(wxWindow *parent, wxMediaCtrl2 *media_ctrl, const wxPoint &pos, const wxSize &size)
+MediaPlayCtrl::MediaPlayCtrl(wxWindow *parent, wxMediaCtrl3 *media_ctrl, const wxPoint &pos, const wxSize &size)
     : wxPanel(parent, wxID_ANY, pos, size)
     , m_media_ctrl(media_ctrl)
 {
